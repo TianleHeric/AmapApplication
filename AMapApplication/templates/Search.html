@@ -1,0 +1,413 @@
+﻿<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+	<meta charset="utf-8">
+
+	<title>地图显示</title>
+    <link rel="stylesheet" href="http://cache.amap.com/lbs/static/main1119.css"/>
+    <script type="text/javascript" src="http://webapi.amap.com/maps?v=1.3&key=43a462f629d817bf91ca4bb95f9cd7b3"></script>
+    <script type="text/javascript" src="http://cache.amap.com/lbs/static/addToolbar.js"></script>
+	<style type="text/css">
+		body{margin:0;height:100%;width:100%;position:absolute;}
+		#mapContainer{height:100%;
+            width:100%;
+        }
+{#          POi搜索框渲染#}
+        #searchBox{
+      background-color: #32a3ff;
+      border:1px solid #ccc;
+      padding-left:10px;
+      padding-right:2px;
+      position:absolute;
+      min-height:30px;
+      top:10px;
+      font-size:12px;
+      left:100px;
+      border-radius:3px;
+      overflow:hidden;
+      line-height:20px;
+      min-width:200px;
+    }
+
+{#        公交路线查询框渲染#}
+    #tip{
+      background-color:#fff;
+      border:0px solid #ccc;
+        bottom: auto;
+
+      padding-right:40px;
+
+
+        max-height: 100%;
+      top:10px;
+      font-size:12px;
+
+      border-radius:3px;
+      overflow:hidden;
+        overflow-y: auto;
+      line-height:20px;
+        min-width:300px;
+    }
+
+{#    按钮风格渲染#}
+    #tip input[type="button"]{
+      background-color: #0D9BF2;
+      height:25px;
+      text-align:center;
+      line-height:25px;
+      color:#fff;
+      font-size:12px;
+      border-radius:3px;
+      outline: none;
+      border:0;
+      cursor:pointer;
+    }
+
+{#    输入文本框渲染#}
+    #tip input[type="text"]{
+      height:25px;
+        width: 130px;
+      border:1px solid #ccc;
+      padding-left:5px;
+      border-radius:3px;
+      outline:none;
+    }
+
+{#    查询结果显示面板渲染#}
+    #result1{
+         position: absolute;
+            background-color: white;
+        border: rgba(3, 4, 13, 0.28);
+            max-height: 80%;
+            overflow-y: auto;
+            top: 120px;
+
+            right: 10px;
+            width: 300px;
+    }
+#navi{
+         position: absolute;
+            background-color: white;
+             border:grey;
+    padding-left: 5px;
+    padding-top: 5px;
+            border-radius:3px;
+             outline-width:thick;
+            outline-color: grey;
+            max-height: 80%;
+            overflow-y: auto;
+            top: 10px;
+            left: 350px;
+            width: 160px;
+    }
+{#    产讯按钮渲染#}
+         #lbs input[type="button"]{
+      background-color: #0D9BF2;
+      height:25px;
+      text-align:center;
+      line-height:25px;
+      color:#fff;
+      font-size:12px;
+      border-radius:3px;
+      outline: none;
+      border:0;
+      cursor:pointer;
+    }
+
+{#         div层渲染#}
+	.amap-info-content {
+	overflow: auto;
+	position: absolute;
+	left: 700px;
+	top: 10px;
+	right: auto;
+	bottom: auto;
+	height: auto;
+	width: auto;
+	padding-top: 10px;
+}
+    </style>
+ <link rel="stylesheet" href="http://cache.amap.com/lbs/static/main1119.css"/>
+</head>
+<body>
+	<div id="mapContainer"></div>
+     <div id="navi"></div>
+    <div id="result1" name="result1"></div>
+  <div id="tip">
+<input type="button" id="button1" onclick="autoNavigation()" value="我的学校">
+      </input>
+  <script type="text/javascript">
+        function autoNavigation()
+        {
+            var marker=new AMap.Marker({
+                icon:"http://www.cugb.edu.cn/images/logo20141008.png",
+                position:[116.350077,39.990453]
+
+            });
+              var markerContent = document.createElement("div");
+        // 点标记中的图标
+        var markerImg = document.createElement("img");
+        markerImg.className = "markerlnglat";
+        markerImg.src = "static/logocugb.png";
+        markerContent.appendChild(markerImg);
+
+        // 点标记中的文本
+        var markerSpan = document.createElement("span");
+        markerSpan.className = 'marker';
+        markerSpan.innerHTML = "我的学校";
+        markerContent.appendChild(markerSpan);
+
+        marker.setContent(markerContent); //更新点标记内容
+            marker.setMap(map);
+               AMap.event.addDomListener(document.getElementById('clearMarker'), 'click', function() {
+        if (marker) {
+            marker.setMap(null);
+            marker = null;
+        }
+    }, false);
+        }
+
+    </script>
+      <input type="button" id="button2" onclick="searchSite()" value="周边景点">
+      </input>
+      <input type="button" class="button" value="删除点标记覆盖物" id="clearMarker"/>
+      <script type="text/javascript">
+          function searchSite()
+          {
+              var siteSearch= new AMap.PlaceSearch({
+            type:'风景名胜',
+            city: "010" ,//城市
+                  map:map,
+                  panel:'result1'
+    });
+              siteSearch.search();
+          }
+      </script>
+      <div>
+          <input id="start" type="text" value="起点（地质大学）"/>
+          <input id="end" type="text" value="终点"/>
+      </div>
+      <input type="button" id="button3" value="公交线路" onclick="searchTrans()" >
+      </input>
+      <script type="text/javascript">
+          function searchTrans()
+          {
+              AMap.service(["AMap.Transfer"], function() {
+        var transOptions = {
+            map: map,
+            city: '北京市',
+            panel:'result1',                            //公交城市
+            //cityd:'乌鲁木齐',
+            policy: AMap.TransferPolicy.LEAST_TIME //乘车策略
+        };
+        //构造公交换乘类
+        var trans = new AMap.Transfer(transOptions);
+        //根据起、终点坐标查询公交换乘路线
+
+        var startPoint=document.getElementById('start').value;
+        var endPoint=document.getElementById('end').value;
+        trans.search([{keyword:startPoint},{keyword:endPoint}], function(status, result){
+        });
+    });
+          }
+      </script>
+  </div>
+    <div id="searchBox">
+     <input type="text" id="keyword" name="keyword" value="POI查询" onfocus='this.value=""' />
+        <label>搜索</label>
+    </div>
+    <script type="text/javascript" src="http://webapi.amap.com/maps?v=1.3&key=330d2ffe4033c945910b51fb4c49ddf7"></script>
+<script type="text/javascript" src="http://cache.amap.com/lbs/static/addToolbar.js"></script>
+<div class="amap-info-content" id="lbs">
+    <input type="button" background-color="#0D9BF2" id="button5" value="周边餐饮" onclick="searchHotel()">
+    </input>
+
+    <input type="button" background-color="#0D9BF2" id="button6" value="周边住宿" onclick="Hotel()">
+    </input>
+   <table>
+        <tr>
+            <td class="column2">
+                <label>左击获取经纬度：</label>
+            </td>
+        </tr>
+        <tr>
+            <td class="column2">
+                <input type="text" readonly="true" id="lnglat">
+            </td>
+        </tr>
+       <script type="text/javascript">
+       </script>
+    </table>
+
+
+    <script type="text/javascript">
+ function searchHotel()
+        {
+         AMap.service(["AMap.PlaceSearch"], function() {
+        var placeSearch = new AMap.PlaceSearch({ //构造地点查询类
+            pageSize: 5,
+            type: '餐饮服务',
+            pageIndex: 1,
+            city: "010", //城市
+            map: map,
+            panel: "result1"
+        });
+        placeSearch.searchNearBy('', [tempxpoint,tempypoint], 500, function(status, result) {
+
+        });
+    });
+          }
+        function Hotel()
+        {
+             AMap.service(["AMap.PlaceSearch"], function() {
+        var placeSearch = new AMap.PlaceSearch({ //构造地点查询类
+            pageSize: 5,
+            type: '住宿',
+            pageIndex: 1,
+            city: "010", //城市
+            map: map,
+            panel: "result1"
+        });
+                // var tempLocation=document.getElementById("lnglat").value;
+
+       // var cpoint = [tempLocation]; //中心点坐标
+        placeSearch.searchNearBy('',  [tempxpoint,tempypoint], 500, function(status, result) {
+
+        });
+    });
+        }
+    </script>
+</div>
+
+<script type="text/javascript">
+          var map = new AMap.Map('mapContainer', {
+				resizeEnable: true,
+				rotateEnable: true,
+				dragEnable: true,
+				zoomEnable: true,
+				//设置可缩放的级别
+				zooms: [3,18],
+				//传入2D视图，设置中心点和缩放级别
+				view: new AMap.View2D({
+				center: new AMap.LngLat(116.397428, 39.90923),
+				zoom: 12
+				 })
+			});
+          var tempxpoint;
+          var tempypoint;
+var clickEventListener = map.on('click', function(e) {
+    tempxpoint= e.lnglat.getLng();
+    tempypoint= e.lnglat.getLat();
+        document.getElementById("lnglat").value = e.lnglat.getLng() + ',' + e.lnglat.getLat();
+    var marker=new AMap.Marker({
+                icon:"http://webapi.amap.com/theme/v1.3/markers/n/mark_r.png",
+                position:[tempxpoint,tempypoint]
+            });
+              var markerContent = document.createElement("div");
+        // 点标记中的图标
+        var markerImg = document.createElement("img");
+        markerImg.className = "markerlnglat";
+        markerImg.src = "http://webapi.amap.com/theme/v1.3/markers/n/mark_r.png";
+        markerContent.appendChild(markerImg);
+        marker.setContent(markerContent); //更新点标记内容
+            marker.setMap(map);
+       AMap.event.addDomListener(document.getElementById('clearMarker'), 'click', function() {
+        if (marker) {
+            marker.setMap(null);
+            marker = null;
+        }
+    }, false);
+    });
+        map.plugin(['AMap.ToolBar','AMap.MapType','AMap.Scale'],function(){
+        //地图中添加地图操作ToolBar插件
+        //设置地位标记为自定义标记
+        var toolBar = new AMap.ToolBar();
+        map.addControl(toolBar);
+
+        //添加地图类型切换插件
+        //地图类型切换
+        var mapType= new AMap.MapType({
+            defaultType:2,//默认显示街区图
+            showRoad:true //叠加路网图层
+        });
+        map.addControl(mapType);
+
+        //加载比例尺插件
+        scale = new AMap.Scale();
+        map.addControl(scale);
+      });
+        map.plugin(['AMap.Autocomplete','AMap.PlaceSearch'],function(){
+      var autoOptions = {
+        city: "北京", //城市，默认全国
+        input: "keyword"//使用联想输入的input的id
+      };
+      autocomplete= new AMap.Autocomplete(autoOptions);
+      var placeSearch = new AMap.PlaceSearch({
+            city:'北京',
+            map:map,
+            panel: "result1"
+      })
+      AMap.event.addListener(autocomplete, "select", function(e){
+         //TODO 针对选中的poi实现自己的功能
+         placeSearch.search(e.poi.name)
+      });
+    });
+
+
+
+	</script>
+<script type="text/javascript">
+    var geolocation;
+
+    //加载地图，调用浏览器定位服务
+    map.plugin('AMap.Geolocation', function() {
+        geolocation = new AMap.Geolocation({
+            enableHighAccuracy: true,//是否使用高精度定位，默认:true
+            timeout: 10000,          //超过10秒后停止定位，默认：无穷大
+            buttonOffset: new AMap.Pixel(10, 20),//定位按钮与设置的停靠位置的偏移量，默认：Pixel(10, 20)
+            zoomToAccuracy: true,      //定位成功后调整地图视野范围使定位位置及精度范围视野内可见，默认：false
+            buttonPosition:'RB'
+        });
+        map.addControl(geolocation);
+        geolocation.getCurrentPosition();
+        AMap.event.addListener(geolocation, 'complete', onComplete);//返回定位信息
+        AMap.event.addListener(geolocation, 'error', onError);      //返回定位出错信息
+    });
+    //解析定位结果
+    function onComplete(data) {
+        var str=['定位成功'];
+        str.push('经度：' + data.position.getLng());
+        str.push('纬度：' + data.position.getLat());
+        str.push('精度：' + data.accuracy + ' 米');
+        str.push('是否经过偏移：' + (data.isConverted ? '是' : '否'));
+        document.getElementById('navi').innerHTML = str.join('<br>');
+
+
+         var marker=new AMap.Marker({
+                icon:"http://webapi.amap.com/theme/v1.3/markers/n/mark_r.png",
+                position:[ data.position.getLng(),data.position.getLat()]
+
+            });
+              var markerContent = document.createElement("div");
+        // 点标记中的图标
+        var markerImg = document.createElement("img");
+        markerImg.className = "markerlnglat";
+        markerImg.src = "http://webapi.amap.com/theme/v1.3/markers/n/mark_r.png";
+        markerContent.appendChild(markerImg);
+
+        // 点标记中的文本
+        var markerSpan = document.createElement("span");
+        markerSpan.className = 'marker';
+        markerSpan.innerHTML = "Hi，I am here!!";
+        markerContent.appendChild(markerSpan);
+
+        marker.setContent(markerContent); //更新点标记内容
+            marker.setMap(map);
+    }
+    //解析定位错误信息
+    function onError(data) {
+        document.getElementById('navi').innerHTML = '定位失败';
+    }
+</script>
+</body>
+</html>
